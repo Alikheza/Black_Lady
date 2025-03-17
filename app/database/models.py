@@ -16,6 +16,7 @@ class Players(Base):
 
     player_id : Mapped[int] = mapped_column(primary_key=True)
     player_name : Mapped[str] = mapped_column(String(20))
+    player_password : Mapped[str]
     player_username : Mapped[str] 
 
     games : Mapped[list["Games"]] = relationship(secondary=association_table, back_populates="players")
@@ -25,6 +26,5 @@ class Games(Base):
     __tablename__ = "games"
 
     game_id : Mapped[int] = mapped_column(primary_key=True)
-
     players : Mapped[list["Players"]] = relationship(secondary=association_table,back_populates="games")
 

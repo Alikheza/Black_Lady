@@ -7,7 +7,7 @@ def create_player(db,data):
     db.commit()
     db.refresh(db_players)
 
-def read_player(db, username:str, id:int = False):
+def read_player(db, username:str = None, id:int = None):
     if id :
         return db.query(Players).filter(Players.player_id==id).first()
     else : 
