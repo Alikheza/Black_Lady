@@ -1,5 +1,5 @@
 from fastapi import APIRouter, WebSocket, WebSocketDisconnect
-from .connection import RoomConnectionManager
+from ..connection import RoomConnectionManager
 
 room_endpoint = APIRouter()
 

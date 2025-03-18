@@ -1,15 +1,14 @@
-from sqlalchemy import create_engine 
-from sqlalchemy.ext.declarative import declarative_base
+from sqlalchemy.ext.asyncio import create_async_engine, async_sessionmaker
 from sqlalchemy.orm import sessionmaker
+from .models import Base
 
-SQLALCHEMY_DATABASE_URL = "sqlite:///./BLACKLADY.db"
+# will be removed from here and added to the config file
+DATABASE_URL = "sqlite+aiosqlite:///BLACKLADY.db"
 
-engine = create_engine(SQLALCHEMY_DATABASE_URL, connect_args={"check_same_thread": False})
+engine = create_async_engine(DATABASE_URL, echo=True)
 
-SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
+async_session = async_sessionmaker(bind=engine)
 
-Base = declarative_base()
-
-
-def create_all_table():
-    Base.metadata.create_all(bind=engine)
+async def create_all_table():
+    async with engine.begin() as connection:
+        await connection.run_sync(Base.metadata.create_all)

@@ -6,5 +6,6 @@ class player(player_in):
     player_id : int
 
 class player_form(BaseModel):
-    username : str
-    password : str 
+    player_name: str
+    player_password: str 
+    player_username: EmailStr

@@ -1,14 +1,14 @@
-# from sqlalchemy import cr
 from ..models import Players
+from sqlalchemy import select
+from sqlalchemy.ext.asyncio import AsyncSession
 
-def create_player(db,data):
-    db_players = Players(**data.dict())
-    db.add(db_players)
-    db.commit()
-    db.refresh(db_players)
 
-def read_player(db, username:str = None, id:int = None):
-    if id :
-        return db.query(Players).filter(Players.player_id==id).first()
-    else : 
-        return db.query(Players).filter(Players.player_username==username).first()
+async def create_player(db: AsyncSession, data) -> None:
+    new_player = Players(**data.dict())
+    db.add(new_player)
+    await db.commit()
+
+
+async def read_player(db: AsyncSession, username: str) -> Players:
+    result = await db.execute(select(Players).filter(Players.player_username == username))
+    return result.scalar_one_or_none()

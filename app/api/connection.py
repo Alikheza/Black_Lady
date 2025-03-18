@@ -1,5 +1,5 @@
 from fastapi import WebSocket
-from ...game.room import Room
+from ..game.room import Room
 
 class RoomConnectionManager(Room):
     def __init__(self,):
@@ -7,11 +7,9 @@ class RoomConnectionManager(Room):
         self.connections : list[WebSocket] = []
 
     async def connect(self, websocket):
-        # await websocket.accept()
         self.connections.append(websocket)
 
     async def disconnect(self, websocket):
-        # await websocket.close()
         self.connections.remove(websocket)
 
     async def broadcast(self, message):
