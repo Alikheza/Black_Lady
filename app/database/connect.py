@@ -5,7 +5,7 @@ from .models import Base
 # will be removed from here and added to the config file
 DATABASE_URL = "sqlite+aiosqlite:///BLACKLADY.db"
 
-engine = create_async_engine(DATABASE_URL, echo=True)
+engine = create_async_engine(DATABASE_URL)
 
 async_session = async_sessionmaker(bind=engine)
 

@@ -8,7 +8,11 @@ async def create_player(db: AsyncSession, data) -> None:
     db.add(new_player)
     await db.commit()
 
-
-async def read_player(db: AsyncSession, username: str) -> Players:
-    result = await db.execute(select(Players).filter(Players.player_username == username))
+async def read_player(db: AsyncSession, username: str = None, id: int = None) -> Players:
+    if username:
+        result = await db.execute(select(Players).filter(Players.player_username == username))
+    elif id:
+        result = await db.execute(select(Players).filter(Players.player_id == id))
+    else:
+        raise ValueError("id or username must be set")
     return result.scalar_one_or_none()

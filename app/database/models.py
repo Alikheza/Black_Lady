@@ -28,7 +28,7 @@ class Players(Base):
     player_id: Mapped[int] = mapped_column(primary_key=True)
     player_name: Mapped[str] = mapped_column(String(20))
     player_password: Mapped[str] = mapped_column(String(100))
-    player_username: Mapped[str] = mapped_column(String(20))
+    player_username: Mapped[str] = mapped_column(String(100))
 
     # games: Mapped[list["Games"]] = relationship("Games", secondary="games_played", back_populates="players",overlaps="player_association")
     game_association: Mapped[list["Association"]] = relationship("Association", back_populates="player",overlaps="players")
