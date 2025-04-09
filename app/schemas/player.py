@@ -12,3 +12,8 @@ class Token(BaseModel):
     access_token: str
     token_type: str
     
+class Friends(BaseModel):
+    player_id: int 
+    friend_id: int
+    request_status: str = "requested"
+
