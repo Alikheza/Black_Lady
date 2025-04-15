@@ -1,10 +1,11 @@
 from .engine import GameEngine 
+from .player import Player
 
 
 class Game(GameEngine):
-    def __init__(self, odd_party = False, total_score : int = 200):
+    def __init__(self, odd_party = False, total_score = 200):
 
-        self.players : list = None
+        self.players : list["Player"] = []
         self.game_started : bool = False
         self.turn : int = None
         super().__init__(odd_party, total_score)

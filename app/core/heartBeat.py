@@ -9,14 +9,14 @@ from datetime import datetime, timedelta
 
 # Dictionary to store player status.
 # Key: username (str)
-# Value: list[online_status (bool), in_game_status (bool), last_heartbeat (datetime)]
-heartBeat: dict[str, list[bool, bool, datetime]] = {}
+# Value: list[online_status (bool), in_game_status (bool), last_heartbeat (datetime), invite_request(room_id:player_username)]
+heartBeat: dict[str, list[bool, bool, datetime, dict[str:str]]] = {}
 
 
 def check_player_online(username: str) -> list[bool, bool, datetime] | None:
     """
     Check if a player is online and return their status.
-
+    
     Args:
         username (str): The username of the player.
 
@@ -46,8 +46,11 @@ def update_player_status(username: str, online: bool = True, is_playing: bool = 
         online (bool): Whether the player is online. Defaults to True.
         is_playing (bool): Whether the player is currently in a game. Defaults to False.
     """
-    heartBeat[username] = [online, is_playing, datetime.now()]
+    if heartBeat.get(username):
+        heartBeat[username][:3] = [online, is_playing, datetime.now()]
+    else:
+        heartBeat[username] = [online, is_playing, datetime.now(), {}]
+        
 
-
-
-
+def add_invitation(username, room_id:str, player_id:str):
+    heartBeat[username][3] = {room_id:player_id}
