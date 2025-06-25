@@ -9,6 +9,9 @@ class Room(Game):
         super().__init__()
         self.id = self._id_generator()
         self.leadr : Player
+        self.game_played_count : int = 0 
+        self.game_played : dict [self.game_played_count:list[tuple[int,int]]] = {}
+        
 
     def _id_generator(self):
         characters = string.ascii_letters + string.digits
@@ -19,4 +22,9 @@ class Room(Game):
         if self.players == []:
             self.leadr = player
         self.players.append(player)
-        
+    
+    def start_game(self):
+        super()._start_game()
+        for player in self.players :
+            player.select_card = None
+    

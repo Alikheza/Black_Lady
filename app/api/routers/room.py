@@ -1,8 +1,7 @@
 from fastapi import APIRouter, WebSocket, WebSocketDisconnect, status
 from ..connection import RoomConnectionManager
 from ...core.auth_ws import authenticate_ws_player
-from .. import room_controller
-
+from .. import room_controller 
 room_endpoint = APIRouter()
 
 room_List: dict[int : RoomConnectionManager] = {}
@@ -39,8 +38,26 @@ async def game_websocket_endpoint(websocket: WebSocket, room_id: str = None):
                     message = {"message":f"{player.name} says: {data.get('message')}"}
                     await room.broadcast(message)
                 case "start_game":
-                    await room_controller.start_game(room)
+                    await room_controller.card_dealer(room)
+                case "selecetd_card":
+                    player.selected_card = [card for card in data.get("card").split(",")]
+                case "play":
+                    room.start_game()
+                case "move" :
+                    card = data.get("card")
+                    if card is None : 
+                        message = {"message":"you are in a game action is not accepted"}
+                        await room.response(message)
+                        continue
+                    try:
+                        room.validate_move(move=card,player_num=player.player_number)
+                    except ValueError as err :
+                        await room.response(err)
                 case "invite_player" :
+                    if room.game_started == True :
+                        message = {"message":"you are in a gave action is not accepted"}
+                        await room.response(message)
+                        continue
                     player_username = data.get("player")
                     await room_controller.invite_player(player_username, player.player_id, room)
                 case _ :

@@ -7,12 +7,14 @@ class Player:
         self.username = username 
         self.deck : list
         self.selected_card : list = None
+        self.player_score : int
 
     def select_card (self, selected_card: list):
         if selected_card in self.deck :
             for card in selected_card :
-                self.selected_card.remove(card)
+                self.deck.remove(card)
         else : 
             raise ValueError("player do NOT have that card")
 
-    
+    def is_suit_absent_for_player(self, suit: str) -> bool:
+        return all(not card.startswith(suit + "_") for card in self.deck)
