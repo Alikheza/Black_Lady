@@ -2,6 +2,17 @@ from .connection import RoomConnectionManager
 from ..core import heartBeat
 from ..game.player import Player
 
+def delete_room(room_id: str, room_list: dict) -> None:
+    """
+    Delete a room from the room_list dictionary.
+    
+    Args:
+        room_id (str): The ID of the room to delete
+        room_list (dict): The dictionary containing all rooms
+    """
+    if room_id in room_list and len(room_list[room_id].players) == 0:
+        del room_list[room_id]
+
 async def invite_player(username: str, player_id: str, room: RoomConnectionManager) -> None:
     """
     Handle player invitation to a game room.
@@ -29,6 +40,25 @@ async def invite_player(username: str, player_id: str, room: RoomConnectionManag
 
     heartBeat.add_invitation(username=username, room_id=room.id, player_id=player_id)
     await room.response(id=player_id, message="Invitation has been sent.")
+
+async def accept_invitation(current_room: RoomConnectionManager , room_to_join: RoomConnectionManager, ws, player: Player):
+
+    conditions = {
+        not room_to_join: "Room does not exist",
+        room_to_join.id == current_room.id: "You are already in this room",
+        room_to_join.game_started or current_room.game_started: "Cannot join while game is in progress",
+        len(room_to_join.players) >= 4: "Target room is full"
+    }
+
+    for condition, message in conditions.items():
+        if condition:
+            await current_room.response(id=player.player_id, message=message)
+            return False
+    
+    await room_to_join.connect(player=player, websocket=ws)
+    current_room.disconnect(player)
+
+    return True
 
 def create_player_object(room: RoomConnectionManager, player) -> Player:
     """
@@ -70,3 +100,4 @@ async def check_player_seleted_card (room: RoomConnectionManager) :
             await room.response(message={"message":"chose your card to exchange"})
             Not_selected.append(player.name)
     return Not_selected
+
