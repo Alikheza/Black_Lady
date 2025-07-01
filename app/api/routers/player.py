@@ -2,7 +2,7 @@ from typing import Annotated
 from fastapi import APIRouter, Depends, HTTPException, status
 from fastapi.security import OAuth2PasswordRequestForm
 from sqlalchemy.ext.asyncio import AsyncSession
-from ...core import auth , heartBeat
+from ...core import auth , presence_tracker
 from ...core.dependency import get_db
 from ...schemas import player as Player
 from ...database.CRUD import player as p_crud
@@ -20,7 +20,7 @@ async def register_player(data: Player.player, session: AsyncSession = Depends(g
     data.player_password = auth.hash_password(data.player_password)
     await p_crud.create_player(db=session, data=data)
 
-    heartBeat.update_player_status(username=data.player_username)
+    presence_tracker.update_player_status(username=data.player_username)
 
     return {"message": "Player registered successfully"}
 
@@ -39,7 +39,7 @@ async def login_player(
         )
 
     token = auth.create_access_token(data={"sub": data.username})
-    heartBeat.update_player_status(data.username)
+    presence_tracker.update_player_status(data.username)
 
     return Player.Token(access_token=token, token_type="bearer")
 
@@ -49,10 +49,10 @@ async def update_player_presence(
     current_user: Annotated[dict, Depends(auth.get_current_player)]
 ):
     username = current_user.player_username
-    heartBeat.update_player_status(username)
+    presence_tracker.update_player_status(username)
 
     # For testing:
-    player_status = heartBeat.check_player_online(username)
+    player_status = presence_tracker.check_player_online(username)
     return {"status": f"{player_status}"}
 
 # Send friend request
@@ -156,7 +156,7 @@ async def read_friends(
     friends_list = [
         {"name":f"{friend[0]}",
         "username":f"{friend[1]}",
-        "online":f"{heartBeat.check_player_online(username=friend[1])}"
+        "online":f"{presence_tracker.check_player_online(username=friend[1])}"
         } for friend in friends_list]  
 
     return {"friends": friends_list}

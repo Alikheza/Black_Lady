@@ -12,6 +12,8 @@ class ENV(BaseSettings):
     ALGORITHM : str = "HS256"
     ACCESS_TOKEN_EXPIRE_MINUTES : int = 4300
     HASH_ROUND : int = 100
+    WS_EXPIRE_SECOUNDS : int = 120
+    WS_AUTHENTICATION_EXPIRE_SECOUNDS : int = 20
 
     class Config:
         env_file = ".env"

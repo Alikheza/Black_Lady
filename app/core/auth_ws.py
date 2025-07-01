@@ -1,3 +1,4 @@
+import asyncio
 import jwt
 from jwt.exceptions import ExpiredSignatureError,InvalidTokenError
 from fastapi import WebSocket , status
@@ -44,12 +45,12 @@ async def authenticate_ws_player(websocket: WebSocket):
     await websocket.accept()
     await websocket.send_text("Please send your token to authenticate.")
 
-    token_data = await websocket.receive()
-    token = token_data.get("text")
-
     try:
+        data = await asyncio.wait_for(websocket.receive_json(), timeout=Evariable.WS_AUTHENTICATION_EXPIRE_SECOUNDS)
+        token = data.get("token")
         player = await decode_ws_token(token=token)
         return player
+    
     except Exception:
         await websocket.send_text("Authentication failed. Please login again.")
         await websocket.close(code=status.WS_1008_POLICY_VIOLATION)

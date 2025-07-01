@@ -27,4 +27,3 @@ class Room(Game):
         super()._start_game()
         for player in self.players :
             player.select_card = None
-    
