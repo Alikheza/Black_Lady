@@ -26,18 +26,26 @@ async def game_websocket_endpoint(websocket: WebSocket, room_id: str = None):
         room = room_List[room_id]
     
     player = room.create_player(user)
-
-    room.connect(player,websocket)
     
+    await room.connect(player,websocket)
     try:       
         while True:
             data = await room.receive_or_timeout(player)
             if data is None :
                 return
             match data.get("action"):
+
                 case "send_message":
-                    message = {"message":f"{player.name} says: {data.get('message')}"}
-                    await room.broadcast(message=message , exclude_player_id= player.player_id)
+                    text = data.get('message')
+                    message = {
+                        "type" : "message",
+                        "payload" : {
+                            "from" : player.name ,
+                            "text" : text
+                        }
+                    }
+                    await room.broadcast(message=message, exclude_player_id=player.player_id)
+
                 case "selected_card":
                     player.selected_card = [card for card in data.get("card").split(",")]
                 case "play":
@@ -54,34 +62,48 @@ async def game_websocket_endpoint(websocket: WebSocket, room_id: str = None):
                         await room.response(err)
 
                 case "invite_player" :
-                    if room.game_started == True :
-                        message = {"message":"you are in a game action is not accepted"}
-                        await room.response(message)
-                        continue
                     player_username = data.get("player")
-                    await room.invite_player(target_username=player_username,inviter_id= player.player_id)
+                    result = await room.invite_player(target_username=player_username,inviter_id= player.player_id)
+                    if result :
+                        await room.response(
+                            id = player.player_id,
+                            message = {
+                                "type" : "notification",
+                                "payload" : {
+                                    "message" : "invitation has been sent" 
+                                }  
+                            }
+                        )
 
                 case "join_room" :
                     room_id = data.get("room_id")
                     room_to_join = room_List.get(room_id)
-                    if room_to_join is None :
-                        await room.response(id=player.player_id , message="Room does not exist")
-                        continue
                     result = await room.join_room(room_to_join=room_to_join, ws=websocket, player=player)
                     if result:
                         room = room_to_join
+                
                 case _ :
                     await room.broadcast("invalid action")
 
     except WebSocketDisconnect:
         await room.broadcast(
-            f"{player.player_number} disconnected from room {room_id}", 
-            exclude_player_id=player.player_id
+            exclude_player_id=player.player_id,
+            messgae = {
+                "type" : "warining",  
+                "payloda" : {
+                    "messgae" : f"{player.name} disconnected from the room"
+                }
+            }
         )
-
-    except Exception:
+# return erro to debuging
+    except Exception as e:
         await room.response(
-            message=f"request type invalid, send request in json",
-            id=player.player_id
+            id=player.player_id,
+            message={
+                "type" : "error",
+                "payload" : {
+                    "message" : f"request type invalid, send request in json {e}"
+                }
+            }
         )
         await room.disconnect(player, status_code=status.WS_1008_POLICY_VIOLATION)

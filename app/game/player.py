@@ -18,3 +18,9 @@ class Player:
 
     def is_suit_absent_for_player(self, suit: str) -> bool:
         return all(not card.startswith(suit + "_") for card in self.deck)
+
+    def to_dict(self):
+        return {"id": self.player_id,
+                 "name": self.name,
+                 "username": self.username,
+                 "player_number": self.player_number}

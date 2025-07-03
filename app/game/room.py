@@ -19,9 +19,11 @@ class Room(Game):
         return random_id
 
     def add_players (self, player) -> None:
-        if self.players == []:
+        player_count = len(self.players)
+        if player_count == 0:
             self.leadr = player
         self.players.append(player)
+        player.player_number = player_count + 1
     
     def start_game(self):
         super()._start_game()

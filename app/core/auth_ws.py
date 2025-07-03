@@ -3,8 +3,10 @@ import jwt
 from jwt.exceptions import ExpiredSignatureError,InvalidTokenError
 from fastapi import WebSocket , status
 from .config import Evariable
+from .presence_tracker import check_player_online
 from .dependency import get_db
 from ..database.CRUD import player as player_crud
+
 
 SECRET_KEY = Evariable.SECRET_KEY
 ALGORITHM = Evariable.ALGORITHM
@@ -36,7 +38,6 @@ async def decode_ws_token(token: str):
             raise ValueError(f"invalid WebSocket token ")
 
 
-
 async def authenticate_ws_player(websocket: WebSocket):
     """
     Handles initial WebSocket authentication by receiving a token,
@@ -49,9 +50,19 @@ async def authenticate_ws_player(websocket: WebSocket):
         data = await asyncio.wait_for(websocket.receive_json(), timeout=Evariable.WS_AUTHENTICATION_EXPIRE_SECOUNDS)
         token = data.get("token")
         player = await decode_ws_token(token=token)
+        player_status = check_player_online(username=player.player_username)
+        if player_status is not None and player_status[0]:
+            raise ValueError
         return player
     
-    except Exception:
-        await websocket.send_text("Authentication failed. Please login again.")
+    except Exception :
+        await websocket.send_json(
+            {
+                "type": "error",
+                "payload": {
+                    "message": "Authentication failed. Please check your token."
+                }
+            }
+        )
         await websocket.close(code=status.WS_1008_POLICY_VIOLATION)
         return None
