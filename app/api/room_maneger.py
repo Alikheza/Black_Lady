@@ -12,7 +12,7 @@ class RoomManager(Room):
     
     def __init__(self):
         super().__init__()  
-        self.connections : dict[str : WebSocket] = {}
+        self.connections : dict[str, WebSocket] = {}
 
     async def connect(self, player, websocket):
 
@@ -40,10 +40,10 @@ class RoomManager(Room):
         }
         await self.response(id=player.player_id, message=player_list_message)
 
-    def disconnect_from_room(self, player: Player, status_code: int = status.WS_1000_NORMAL_CLOSURE):
+    def disconnect_from_room(self, player: Player):
 
         self.connections.pop(player.player_id, None)
-        self.players.remove(player)
+        self.remove_player(player)
         if len(self.players) == 0:
             room_List.pop(self.id, None)
 
@@ -56,7 +56,7 @@ class RoomManager(Room):
             pass
         finally:
             self.connections.pop(player.player_id, None)
-            self.players.remove(player)
+            self.remove_player(player)
             if len(self.players) == 0:
                 room_List.pop(self.id, None)
                 
@@ -80,7 +80,7 @@ class RoomManager(Room):
         if connection :
             await connection.send_json(message)
     
-    async def invite_player(self, target_username: str, inviter_id: str):
+    async def invite_player(self, target_username: str, inviter_player):
         player_status = presence_tracker.check_player_online(username=target_username)
         
         conditions = {
@@ -92,7 +92,7 @@ class RoomManager(Room):
         for condition, error_msg in conditions.items():
             if condition:
                 await self.response(
-                    id=inviter_id,
+                    id=inviter_player.player_id,
                     message={
                         "type": "error",
                         "payload": {
@@ -101,6 +101,18 @@ class RoomManager(Room):
                     }
                 )
                 return False
+            
+        message = {
+            "type" : "notification",
+            "action" : "invite",
+            "payload" : {
+                "sender_name" : inviter_player.name, 
+                "sender_username" : inviter_player.username,
+                "room_id" : self.id
+            }
+        }
+
+        presence_tracker.push_notification(username=target_username, message=message)
 
         return True
     

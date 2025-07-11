@@ -11,11 +11,15 @@ class Game(GameEngine):
         self.first_move : bool = False
         self.is_heart_broken : bool = False
         self.ground: dict[int, str] = {}  
+        self.score_bord : dict[int, int] = {0:0,1:0,2:0,3:0}
         super().__init__()
 
     def _start_game(self):
-        self.odd_p = True if len(self.players)==3 else False
-        
+        if len(self.players)==3 :
+            self.odd_p = True 
+            self.score_bord.pop(3)
+        else: False
+            
         self.game_turn = (self.game_turn + 1 ) % len(self.players)
 
         self.exchange(self.players)
@@ -26,7 +30,7 @@ class Game(GameEngine):
             for card in player.deck :
                 if card == "C_2":
                     self.turn = num
-                    return
+                    return num
                 
     def _validate_move(self, move, player_num):
         if not self.is_heart_broken and len(self.ground) > 0 and move.startswith("H_"):
@@ -93,6 +97,8 @@ class Game(GameEngine):
         for player in self.players:
             if player.player_number == player_with_max_value:
                 player.player_score += negetive_value
+                self.score_bord[player_with_max_value] += negetive_value
+                
 
         self.ground.clear()
         self.turn = player_with_max_value            

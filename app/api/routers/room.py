@@ -1,6 +1,9 @@
 from fastapi import APIRouter, WebSocket, WebSocketDisconnect , status
 from ..room_maneger import RoomManager , room_List  
 from ...core.auth_ws import authenticate_ws_player
+from ...core import presence_tracker
+import asyncio
+from app.core.presence_tracker import get_player_queue
 
 room_endpoint = APIRouter()
 
@@ -27,24 +30,52 @@ async def game_websocket_endpoint(websocket: WebSocket, room_id: str = None):
     
     player = room.create_player(user)
     
-    await room.connect(player,websocket)
+    notif_queue = get_player_queue(player.username)
+    await room.connect(player, websocket)
+
     try:       
+        
         while True:
-            data = await room.receive_or_timeout(player)
-            if data is None :
-                return
+
+            receive_task = asyncio.create_task(room.receive_or_timeout(player))
+            notif_task = asyncio.create_task(notif_queue.get())
+            done, pending = await asyncio.wait(
+                [receive_task, notif_task],
+                return_when=asyncio.FIRST_COMPLETED
+            )
+
+            if notif_task in done:
+                notif_message = notif_task.result()
+                await room.response(id=player.player_id, message=notif_message)
+                if receive_task in pending:
+                    receive_task.cancel()
+                    continue
+
+            data = receive_task.result()
+            if data is None: return
+
             match data.get("action"):
 
                 case "send_message":
                     text = data.get('message')
-                    message = {
-                        "type" : "message",
-                        "payload" : {
-                            "from" : player.name ,
-                            "text" : text
+                    if text is not None : 
+                        message = {
+                            "type" : "message",
+                            "payload" : {
+                                "from" : player.name ,
+                                "text" : text
+                            }
                         }
-                    }
-                    await room.broadcast(message=message, exclude_player_id=player.player_id)
+                        await room.broadcast(message=message, exclude_player_id=player.player_id)
+                    else:
+                        message = {
+                            "type" : "error",
+                            "action" : "none_value",
+                            "payload" : {
+                                "message" : "can not send none value message"
+                            }
+                        }
+                        await room.response(id=player.player_id, message=message)
 
                 case "selected_card":
                     player.selected_card = [card for card in data.get("card").split(",")]
@@ -63,7 +94,7 @@ async def game_websocket_endpoint(websocket: WebSocket, room_id: str = None):
 
                 case "invite_player" :
                     player_username = data.get("player")
-                    result = await room.invite_player(target_username=player_username,inviter_id= player.player_id)
+                    result = await room.invite_player(target_username=player_username,inviter_player= player)
                     if result :
                         await room.response(
                             id = player.player_id,
@@ -84,6 +115,9 @@ async def game_websocket_endpoint(websocket: WebSocket, room_id: str = None):
                 
                 case _ :
                     await room.broadcast("invalid action")
+            
+            if notif_task in pending:
+                notif_task.cancel()
 
     except WebSocketDisconnect:
         await room.broadcast(
